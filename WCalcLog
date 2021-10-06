@@ -1,0 +1,16 @@
+#!/bin/zsh
+
+printf '\033[8;40;36t'
+source ~/.GAUSS
+x=1
+while [ $x = 1 ]
+do
+  clear
+  HoursLog=$(<~/.WageCalc/HoursLog)
+  WageLog=$(<~/.WageCalc/WageLog)
+  RevLog=$(<~/.WageCalc/RevenueLog)
+  printf $blue"\n"'Hours Log'"\n"$white"$HoursLog\n"
+  printf $blue'Wage Log'"\n"$white"$WageLog\n"
+  printf $blue'Revenue Log'"\n"$white"$RevLog"
+  sleep 1
+done

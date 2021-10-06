@@ -1,0 +1,226 @@
+#!/bin/zsh
+
+cd "${0%/*}"
+
+clear
+source ~/.GAUSS
+
+x=1
+while [ $x = 1 ]
+do
+  if [[ -e ~/.WageCalc ]]
+    then if [[ -f ~/.WageCalc/WageLog ]]
+      then x=0
+    else
+      touch ~/.WageCalc/WageLog
+      touch ~/.WageCalc/HoursLog
+      touch ~/.WageCalc/RevenueLog
+      x=0
+    fi
+  else
+    mkdir ~/.WageCalc
+    x=0
+  fi
+done
+
+DateOfRecP1=$(date | cut -c -11)
+DateOfRecP2=$(date | cut -c 25-28)
+DateOfRec="$DateOfRecP1""$DateOfRecP2"
+
+printf $blue"Hourly wage?: "$white
+read Hourly
+
+printf $blue"How much in tips for today?: "$white
+read Tips
+
+printf $blue"How many hours today?: "$white
+read Hours
+
+if [ $Tips = 0 ]
+  then if [ $Hours = 0 ]
+    then printf "$DateOfRec"' 0'"\n" >> ~/.WageCalc/WageLog
+    printf "$DateOfRec"' 0'"\n" >> ~/.WageCalc/HoursLog
+    printf "$DateOfRec"' 0'"\n" >> ~/.WageCalc/RevenueLog
+    printf 'Day off logged successfully.'"\n"
+  fi
+else
+  FinalDayWage=$(((( $Hourly * $Hours ) + $Tips ) / $Hours ))
+  FinalDayRevenue=$((( $Hourly * $Hours ) + $Tips ))
+  printf $green"\n"'Final wage for the day is: '$white'$'
+  printf "$FinalDayWage" | cut -c -5
+  printf $orange"\n"'Gross revenue today: '$white'$'
+  printf "$FinalDayRevenue" | cut -c -6
+  printf "$DateOfRec"' '"$FinalDayWage""\n" >> ~/.WageCalc/WageLog
+  printf "$DateOfRec"' '"$Hours""\n" >> ~/.WageCalc/HoursLog
+  printf "$DateOfRec"' '"$FinalDayRevenue""\n" >> ~/.WageCalc/RevenueLog
+
+  DaysLogged=$(wc -l ~/.WageCalc/WageLog | awk -F" " '{print $1}')
+
+  if [[ $DaysLogged -lt 7 ]]
+    then printf $magenta"\nNot enough days to calculate Weekly total and avg\n\n"$white
+  else
+    #Calculate First Week Total and Average
+    FirstDayWage=$(<~/.WageCalc/WageLog | head -n 1 | tail -n 1 | cut -c 16-)
+    SecondDayWage=$(<~/.WageCalc/WageLog | head -n 2 | tail -n 1 | cut -c 16-)
+    ThirdDayWage=$(<~/.WageCalc/WageLog | head -n 3 | tail -n 1 | cut -c 16-)
+    FourthDayWage=$(<~/.WageCalc/WageLog | head -n 4 | tail -n 1 | cut -c 16-)
+    FifthDayWage=$(<~/.WageCalc/WageLog | head -n 5 | tail -n 1 | cut -c 16-)
+    SixthDayWage=$(<~/.WageCalc/WageLog | head -n 6 | tail -n 1 | cut -c 16-)
+    SeventhDayWage=$(<~/.WageCalc/WageLog | head -n 7 | tail -n 1 | cut -c 16-)
+  
+    FirstDayHours=$(<~/.WageCalc/HoursLog | head -n 1 | tail -n 1 | cut -c 16-)
+    SecondDayHours=$(<~/.WageCalc/HoursLog | head -n 2 | tail -n 1 | cut -c 16-)
+    ThirdDayHours=$(<~/.WageCalc/HoursLog | head -n 3 | tail -n 1 | cut -c 16-)
+    FourthDayHours=$(<~/.WageCalc/HoursLog | head -n 4 | tail -n 1 | cut -c 16-)
+    FifthDayHours=$(<~/.WageCalc/HoursLog | head -n 5 | tail -n 1 | cut -c 16-)
+    SixthDayHours=$(<~/.WageCalc/HoursLog | head -n 6 | tail -n 1 | cut -c 16-)
+    SeventhDayHours=$(<~/.WageCalc/HoursLog | head -n 7 | tail -n 1 | cut -c 16-)
+  
+    FirstDayGross=$(( $FirstDayWage * $FirstDayHours ))
+    SecondDayGross=$(( $SecondDayWage * $SecondDayHours ))
+    ThirdDayGross=$(( $ThirdDayWage * $ThirdDayHours ))
+    FourthDayGross=$(( $FourthDayWage * $FourthDayHours ))
+    FifthDayGross=$(( $FifthDayWage * $FifthDayHours ))
+    SixthDayGross=$(( $SixthDayWage * $SixthDayHours ))
+    SeventhDayGross=$(( $SeventhDayWage * $SeventhDayHours ))
+  
+    WeekTotalHours=$(( $FirstDayHours + $SecondDayHours + $ThirdDayHours + $FourthDayHours + $FifthDayHours + $SixthDayHours + $SeventhDayHours ))
+    WeekGross=$(( $FirstDayGross + $SecondDayGross + $ThirdDayGross + $FourthDayGross + $FifthDayGross + $SixthDayGross + $SeventhDayGross ))
+    
+    printf $blue"\n\n"'Total hours for the first week: '$white
+    printf "$WeekTotalHours" | cut -c -5
+    
+    printf $green'Gross revenue for the first week: '$white'$'
+    printf "$WeekGross" | cut -c -5
+  
+    WeekAvgWage=$(( $WeekGross / $WeekTotalHours ))
+    printf $orange'Average wage for the first week: '$white'$'
+    printf "$WeekAvgWage" | cut -c -5
+  
+    if [[ $DaysLogged -lt 14 ]]
+      then printf $magenta"Not enough days to calculate Biweekly total and avg\n\n"
+    else
+      #Calculate Biweek Total and Average
+      EighthDayWage=$(<~/.WageCalc/WageLog | head -n 1 | tail -n 1 | cut -c 16-)
+      NinthDayWage=$(<~/.WageCalc/WageLog | head -n 2 | tail -n 1 | cut -c 16-)
+      TenthDayWage=$(<~/.WageCalc/WageLog | head -n 3 | tail -n 1 | cut -c 16-)
+      EleventhDayWage=$(<~/.WageCalc/WageLog | head -n 4 | tail -n 1 | cut -c 16-)
+      TwelfthDayWage=$(<~/.WageCalc/WageLog | head -n 5 | tail -n 1 | cut -c 16-)
+      ThirteenthDayWage=$(<~/.WageCalc/WageLog | head -n 6 | tail -n 1 | cut -c 16-)
+      FourteenthDayWage=$(<~/.WageCalc/WageLog | head -n 7 | tail -n 1 | cut -c 16-)
+  
+      EighthDayHours=$(<~/.WageCalc/HoursLog | head -n 1 | tail -n 1 | cut -c 16-)
+      NinthDayHours=$(<~/.WageCalc/HoursLog | head -n 2 | tail -n 1 | cut -c 16-)
+      TenthDayHours=$(<~/.WageCalc/HoursLog | head -n 3 | tail -n 1 | cut -c 16-)
+      EleventhDayHours=$(<~/.WageCalc/HoursLog | head -n 4 | tail -n 1 | cut -c 16-)
+      TwelfthDayHours=$(<~/.WageCalc/HoursLog | head -n 5 | tail -n 1 | cut -c 16-)
+      ThirteenthDayHours=$(<~/.WageCalc/HoursLog | head -n 6 | tail -n 1 | cut -c 16-)
+      FourteenthDayHours=$(<~/.WageCalc/HoursLog | head -n 7 | tail -n 1 | cut -c 16-)
+      
+      EighthDayGross=$(( $EighthDayWage * $EighthDayHours ))
+      NinthDayGross=$(( $NinthDayWage * $NinthDayHours ))
+      TenthDayGross=$(( $TenthDayWage * $TenthDayHours ))
+      EleventhDayGross=$(( $EleventhDayWage * $EleventhDayHours ))
+      TwelfthDayGross=$(( $TwelfthDayWage * $TwelfthDayHours ))
+      ThirteenthDayGross=$(( $ThirteenthDayWage * $ThirteenthDayHours ))
+      FourteenthDayGross=$(( $FourteenthDayWage * $FourteenthDayHours ))
+      
+      BiweekTotalHours=$(( $EighthDayHours + $NinthDayHours + $TenthDayHours + $EleventhDayHours + $TwelfthDayHours + $ThirteenthDayHours + $FourteenthDayHours + $WeekTotalHours ))
+      BiweekGross=$(( $EighthDayGross + $NinthDayGross + $TenthDayGross + $EleventhDayGross + $TwelfthDayGross + $ThirteenthDayGross + $FourteenthDayGross + $WeekGross ))
+      
+      printf $blue"\n"'Total hours for the biweek: '$white
+      printf "$BiweekTotalHours" | cut -c -5
+      
+      printf $green'Gross revenue for the biweek: '$white'$'
+      printf "$BiweekGross" | cut -c -5
+      
+      BiweekAvgWage=$(( $BiweekGross / $BiweekTotalHours ))
+      printf $orange'Average wage for the biweek: '$white'$'
+      printf "$BiweekAvgWage" | cut -c -5
+      
+      if [[ $DaysLogged -lt 21 ]]
+        then printf $magenta"Not enough days to calculate Triweekly total and avg\n\n"
+      else
+        #Calculate Triweek Total and Average
+        FifteenthDayWage=$(<~/.WageCalc/WageLog | head -n 1 | tail -n 1 | cut -c 16-)
+        SixteenthDayWage=$(<~/.WageCalc/WageLog | head -n 2 | tail -n 1 | cut -c 16-)
+        SeventeenthDayWage=$(<~/.WageCalc/WageLog | head -n 3 | tail -n 1 | cut -c 16-)
+        EighteenthDayWage=$(<~/.WageCalc/WageLog | head -n 4 | tail -n 1 | cut -c 16-)
+        NineteenthDayWage=$(<~/.WageCalc/WageLog | head -n 5 | tail -n 1 | cut -c 16-)
+        TwentiethDayWage=$(<~/.WageCalc/WageLog | head -n 6 | tail -n 1 | cut -c 16-)
+        TwentyfirstDayWage=$(<~/.WageCalc/WageLog | head -n 7 | tail -n 1 | cut -c 16-)
+  
+        FifteenthDayHours=$(<~/.WageCalc/HoursLog | head -n 1 | tail -n 1 | cut -c 16-)
+        SixteenthDayHours=$(<~/.WageCalc/HoursLog | head -n 2 | tail -n 1 | cut -c 16-)
+        SeventeenthDayHours=$(<~/.WageCalc/HoursLog | head -n 3 | tail -n 1 | cut -c 16-)
+        EighteenthDayHours=$(<~/.WageCalc/HoursLog | head -n 4 | tail -n 1 | cut -c 16-)
+        NineteenthDayHours=$(<~/.WageCalc/HoursLog | head -n 5 | tail -n 1 | cut -c 16-)
+        TwentiethDayHours=$(<~/.WageCalc/HoursLog | head -n 6 | tail -n 1 | cut -c 16-)
+        TwentyfirstDayHours=$(<~/.WageCalc/HoursLog | head -n 7 | tail -n 1 | cut -c 16-)
+      
+        FifteenthDayGross=$(( $FifteenthDayWage * $FifteenthDayHours ))
+        SixteenthDayGross=$(( $SixteenthDayWage * $SixteenthDayHours ))
+        SeventeenthDayGross=$(( $SeventeenthDayWage * $SeventeenthDayHours ))
+        EighteenthDayGross=$(( $EighteenthDayWage * $EighteenthDayHours ))
+        NineteenthDayGross=$(( $NineteenthDayWage * $NineteenthDayHours ))
+        TwentiethDayGross=$(( $TwentiethDayWage * $TwentiethDayHours ))
+        TwentyfirstDayGross=$(( $TwentyfirstDayWage * $TwentyfirstDayHours ))
+      
+        TriweekTotalHours=$(( $FifteenthDayHours + $SixteenthDayHours + $SeventeenthDayHours + $EighteenthDayHours + $NineteenthDayHours + $TwentiethDayHours + $TwentyfirstDayHours + $WeekTotalHours + $BiweekTotalHours ))
+        TriweekGross=$(( $FifteenthDayGross + $SixteenthDayGross + $SeventeenthDayGross + $EighteenthDayGross + $NineteenthDayGross + $TwentiethDayGross + $TwentyfirstDayGross + $WeekGross + BiweekGross ))
+        
+        printf $blue"\n"'Total hours for the triweek: '$white
+        printf "$TriweekTotalHours" | cut -c -5
+        
+        printf $green'Gross revenue for the triweek: '$white'$'
+        printf "$TriweekGross" | cut -c -5
+        
+        TriweekAvgWage=$(( $TriweekGross / $TriweekTotalHours ))
+        printf $orange'Average wage for the triweek: '$white'$'
+        printf "$TriweekAvgWage" | cut -c -5
+        
+        if [[ $DaysLogged -lt 28 ]]
+          then printf $magenta"Not enough days to calculate Triweekly total and avg\n\n"
+        else
+          #Calculate Month Total and Average
+          TwentysecondDayWage=$(<~/.WageCalc/WageLog | head -n 1 | tail -n 1 | cut -c 16-)
+          TwentythirdDayWage=$(<~/.WageCalc/WageLog | head -n 2 | tail -n 1 | cut -c 16-)
+          TwentyfourthDayWage=$(<~/.WageCalc/WageLog | head -n 3 | tail -n 1 | cut -c 16-)
+          TwentyfifthDayWage=$(<~/.WageCalc/WageLog | head -n 4 | tail -n 1 | cut -c 16-)
+          TwentysixthDayWage=$(<~/.WageCalc/WageLog | head -n 5 | tail -n 1 | cut -c 16-)
+          TwentyseventhDayWage=$(<~/.WageCalc/WageLog | head -n 6 | tail -n 1 | cut -c 16-)
+          TwentyeighthDayWage=$(<~/.WageCalc/WageLog | head -n 7 | tail -n 1 | cut -c 16-)
+  
+          TwentysecondDayHours=$(<~/.WageCalc/HoursLog | head -n 1 | tail -n 1 | cut -c 16-)
+          TwentythirdDayHours=$(<~/.WageCalc/HoursLog | head -n 2 | tail -n 1 | cut -c 16-)
+          TwentyfourthDayHours=$(<~/.WageCalc/HoursLog | head -n 3 | tail -n 1 | cut -c 16-)
+          TwentyfifthDayHours=$(<~/.WageCalc/HoursLog | head -n 4 | tail -n 1 | cut -c 16-)
+          TwentysixthDayHours=$(<~/.WageCalc/HoursLog | head -n 5 | tail -n 1 | cut -c 16-)
+          TwentyseventhDayHours=$(<~/.WageCalc/HoursLog | head -n 6 | tail -n 1 | cut -c 16-)
+          TwentyeighthDayHours=$(<~/.WageCalc/HoursLog | head -n 7 | tail -n 1 | cut -c 16-)
+      
+          TwentysecondDayGross=$(( $TwentysecondDayWage * $TwentysecondDayHours ))
+          TwentythirdDayGross=$(( $TwentythirdDayWage * $TwentythirdDayHours ))
+          TwentyfourthDayGross=$(( $TwentyfourthDayWage * $TwentyfourthDayHours ))
+          TwentyfifthDayGross=$(( $TwentyfifthDayWage * $TwentyfifthDayHours ))
+          TwentysixthDayGross=$(( $TwentysixthDayWage * $TwentysixthDayHours ))
+          TwentyseventhDayGross=$(( $TwentyseventhDayWage * $TwentyseventhDayHours ))
+          TwentyeighthDayGross=$(( $TwentyeighthDayWage * $TwentyeighthDayHours ))
+      
+          MonthTotalHours=$(( $TwentysecondDayHours + $TwentythirdDayHours + $TwentyfourthDayHours + $TwentyfifthDayHours + $TwentysixthDayHours + $TwentyseventhDayHours + $TwentyeighthDayHours + $WeekTotalHours + $BiweekTotalHours + $TriweekTotalHours ))
+          MonthGross=$(( $TwentysecondDayGross + $TwentythirdDayGross + $TwentyfourthDayGross + $TwentyfifthDayGross + $TwentysixthDayGross + $TwentyseventhDayGross + $TwentyeighthDayGross + $WeekGross + $BiweekGross + $TriweekGross ))
+          
+          printf $blue"\n"'Total hours for the month: '$white
+          printf "$MonthTotalHours" | cut -c -5
+          
+          printf $green'Gross revenue for the month: '$white'$'
+          printf "$MonthGross" | cut -c -5
+       
+          MonthAvgWage=$(( $MonthGross / $MonthTotalHours ))
+          printf $orange'Average wage for the month: '$white'$'
+          printf "$MonthAvgWage" | cut -c -5
+        fi
+      fi
+    fi
+  fi
+fi
